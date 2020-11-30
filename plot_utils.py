@@ -1,60 +1,72 @@
 import matplotlib.pyplot as plt
 import data_utils as du
-import rnn_utils as ru
+import custom_models as cm
 import numpy as np
-
 
 def single_plots(dictionary, raw_data, save=False, show_plots=True, save_folder="analysis", plot_baseline=True, horizon="default"):
     
-    # Está função também plota o baseline e adiciona uma comparação no analysis dict
+    # Está função também plota o baseline e registra o desempenho num dicionário
     sse_info = {}
     
-    for y in dictionary:
+    for output in dictionary:
         try:
-            regressors = dictionary[y]["model"]["regressors"]
+            regressors = dictionary[output]["model"]["regressors"]
             
-            K = dictionary[y]["model"]["K"]
+            K = dictionary[output]["model"]["K"]
             
-            weights = dictionary[y]["model"]["weights"]
+            weights = dictionary[output]["model"]["weights"]
             
             if horizon == "default":
-                horizon = dictionary[y]["K selection results"]["parameters"]["horizon"]
+                horizon = dictionary[output]["K selection results"]["parameters"]["horizon"]
 
         except KeyError:
-            print("Missing training results for " + y + ", output will not be plotted")
+            print("Missing training results for " + output + ", output will not be plotted")
             continue
         
         try:
-            dependency = dictionary[y]["dependency mask"]
+            dependency = dictionary[output]["dependency mask"]
         except KeyError:
             dependency = None
             
-        data = du.trim_data(raw_data, y, dependency)
+        data = du.trim_data(raw_data, output, dependency)
             
-        X, Y, Y_scaler = du.build_sets_for_plotting(data, regressors, y)
+        X, Y, Y_scaler = du.build_sets(data, regressors, output, return_Y_scaler=True)
         
-        X, Y, y0 = ru.rnn_sets(X, Y, y, horizon, regressors[y])
+        if horizon > 1:
+            X, Y, y0 = du.recursive_sets(X, Y, output, horizon, regressors[output])
+            model = cm.rnn_model(horizon=horizon, K=K)
+            baseline = np.repeat(y0[:, 0:1], repeats=horizon, axis=0)
+        else:
+            baseline = np.array(X[output + "(k-1)"])
+            baseline = baseline.reshape(baseline.shape[0], 1)
+            X = np.array(X)
+            Y = np.array(Y)
+            model = cm.sp_model(K)
         
-        model = ru.rnn_model2(horizon=horizon, K=K)
-        
-        # Gambiarra só pra definir a input layer shape e ser possível setar os weights
-        model.predict([X[0:1], y0[0:1]], verbose=False)
+        # Força o custom model a definir a input layer shape, possibilitando setar os weights
+        if horizon > 1:
+            model.predict([X[0:1], y0[0:1]], verbose=False)
+        else:
+           model.predict(X[0:1], verbose=False)
+           
         model.set_weights(weights)
             
-        predictions = model.predict([X, y0], verbose=False)
-
+        if horizon > 1:
+            predictions = model.predict([X, y0], verbose=False)
+        else:
+            predictions = model.predict(X, verbose=False)
+            
         # Remove uma dimensão, colocando as predições de volta em sequência
-        predictions = predictions.reshape(X.shape[0]*X.shape[1], 1)
+        if horizon > 1:
+            predictions = predictions.reshape(X.shape[0]*X.shape[1], 1)
     
-        Y = Y.reshape(X.shape[0]*X.shape[1], 1)
+            Y = Y.reshape(X.shape[0]*X.shape[1], 1)
 
         model_sse = np.sum( np.square(Y - predictions) )
-        
-        baseline = np.repeat(y0[:, 0:1], repeats=horizon, axis=0)
             
         baseline_sse = np.sum( np.square(Y - baseline) )
         
-        sse_info[y] = "Horizon: " + str(horizon) + ", model SSE: " + "%.5f" % model_sse + ", baseline: " + "%.5f" % baseline_sse
+        sse_info[output] = "Horizon: " + str(horizon) + ", model SSE: " + "%.5f" % model_sse + ", baseline: " + "%.5f" % baseline_sse
             
         baseline = Y_scaler.inverse_transform(baseline)
         
@@ -68,9 +80,9 @@ def single_plots(dictionary, raw_data, save=False, show_plots=True, save_folder=
         
         if plot_baseline:
             plt.plot(baseline, 'y', linewidth=0.8, label='baseline')
-            plt.title(y + ", horizon = " + str(horizon) + ", model SSE = " + "%.5f" % model_sse + ", baseline SSE = " + "%.5f" % baseline_sse)
+            plt.title(output + ", horizon = " + str(horizon) + ", model SSE = " + "%.5f" % model_sse + ", baseline SSE = " + "%.5f" % baseline_sse)
         else:
-            plt.title(y + ", horizon = " + str(horizon) + ", SSE = " + "%.5f" % model_sse)
+            plt.title(output + ", horizon = " + str(horizon) + ", SSE = " + "%.5f" % model_sse)
             
         plt.xlabel("sample")
         plt.legend()
@@ -81,84 +93,114 @@ def single_plots(dictionary, raw_data, save=False, show_plots=True, save_folder=
         manager.window.showMaximized()
         
         if save:
-            plt.savefig(save_folder + "\\figure_" + y, bbox_inches='tight') 
+            plt.savefig(save_folder + "\\figure_" + output, bbox_inches='tight') 
         if not show_plots:
             plt.close()
         
     return sse_info
 
 
-def multiplots(dictionary, raw_data, size=3, save=False, save_folder="analysis", horizon="default"):
+def multiplots(dictionary, raw_data, size=[3, 3], save=False, save_folder="analysis", horizon="default", baseline_in_title=False):
         
     plot_index = [0, 0]
     save_string = None
     
-    for y in dictionary:
+    for output in dictionary:
         try:
-            regressors = dictionary[y]["model"]["regressors"]
+            regressors = dictionary[output]["model"]["regressors"]
             
-            K = dictionary[y]["model"]["K"]
+            K = dictionary[output]["model"]["K"]
             
-            weights = dictionary[y]["model"]["weights"]
+            weights = dictionary[output]["model"]["weights"]
             
             if horizon == "default":
-                horizon = dictionary[y]["K selection results"]["parameters"]["horizon"]
+                horizon = dictionary[output]["K selection results"]["parameters"]["horizon"]
             
         except KeyError:
-            print("Missing training results for " + y + ", output will not be plotted")
+            print("Missing training results for " + output + ", output will not be plotted")
             continue
         
         try:
-            dependency = dictionary[y]["dependency mask"]
+            dependency = dictionary[output]["dependency mask"]
         except KeyError:
             dependency = None
                   
-        data = du.trim_data(raw_data, y, dependency)
+        data = du.trim_data(raw_data, output, dependency)
                        
-        X, Y, Y_scaler = du.build_sets_for_plotting(data, regressors, y)
+        X, Y, Y_scaler = du.build_sets(data, regressors, output, return_Y_scaler=True)
         
-        X, Y, y0 = ru.rnn_sets(X, Y, y, horizon, regressors[y])    
+        if horizon > 1:
+            X, Y, y0 = du.recursive_sets(X, Y, output, horizon, regressors[output])    
+            model = cm.rnn_model(horizon=horizon, K=K)
+        else:
+            model = cm.sp_model(K)
+            X = np.array(X)
+            Y = np.array(Y)
         
-        model = ru.rnn_model2(horizon=horizon, K=K)
-        
-        # Gambiarra só pra definir a input layer shape e ser possível setar os weights
-        model.predict([X[0:1], y0[0:1]], verbose=False)
+        # Força o custom model a definir a input layer shape, possibilitando setar os weights
+        if horizon > 1:
+            model.predict([X[0:1], y0[0:1]], verbose=False)
+        else:
+            model.predict(X[0:1], verbose=False)
         model.set_weights(weights)
         
-        predictions = model.predict([X, y0], verbose=False)
+        if horizon > 1:
+            predictions = model.predict([X, y0], verbose=False)
+        else:
+            predictions = model.predict(X, verbose=False)
+            
+        if horizon > 1:
+            predictions = predictions.reshape(X.shape[0]*X.shape[1], 1)
         
-        predictions = predictions.reshape(X.shape[0]*X.shape[1], 1)
+            Y = Y.reshape(X.shape[0]*X.shape[1], 1)
+        
+        model_sse = np.sum( np.square(Y - predictions) )
         
         predictions = Y_scaler.inverse_transform(predictions)
         
-        Y = Y.reshape(X.shape[0]*X.shape[1], 1)
-        
-        model_sse = np.sum( np.square(Y - predictions) )
+        if baseline_in_title:
+            
+            if horizon > 1:
+                
+                baseline = np.repeat(y0[:, 0:1], repeats=horizon, axis=0)
+                
+                baseline_sse = np.sum( np.square(Y - baseline) )
         
         Y = Y_scaler.inverse_transform(Y)
                                             
         if (plot_index == [0, 0]):
-            fig, axs = plt.subplots(size, size)
-            save_string = y
+            fig, axs = plt.subplots(size[0], size[1])
+            save_string = output
             
-        axs[plot_index[0], plot_index[1]].plot(Y, 'b', linewidth=1, label=y)
-        axs[plot_index[0], plot_index[1]].plot(predictions, 'r', linewidth=0.7, label=y + '_pred')
+        axs[plot_index[0], plot_index[1]].plot(Y, 'b', linewidth=1, label=output)
+        axs[plot_index[0], plot_index[1]].plot(predictions, 'r', linewidth=0.7, label=output + '_pred')
         axs[plot_index[0], plot_index[1]].legend()
-        axs[plot_index[0], plot_index[1]].set_title(y + ", horizon = " + str(horizon) + ", SSE = " + "%.5f" % model_sse)
+        
+        if baseline_in_title:
+            axs[plot_index[0], plot_index[1]].set_title(output + ", h = " + str(horizon) + ", SSE = " + "%.1f" % model_sse + ", base = " + "%.1f" % baseline_sse)
+        else:
+            axs[plot_index[0], plot_index[1]].set_title(output + ", horizon = " + str(horizon) + ", SSE = " + "%.2f" % model_sse)
+        
+        axs[plot_index[0], plot_index[1]].set_yticklabels([])
+        axs[plot_index[0], plot_index[1]].set_xticklabels([])
+        
+        plt.gca().axes.get_yaxis().set_visible(False)
+        plt.gca().axes.get_xaxis().set_visible(False)
         
         # Se chegou no canto inferior direito
-        if (plot_index == [size-1, size-1]):
+        if (plot_index == [size[0] - 1, size[1] - 1]):
             plot_index = [0, 0]
-            # fig.tight_layout()
+            
+            fig.tight_layout()
             fig.set_size_inches(17, 9.5)
             # Essa linha maximiza a janela do plot, funciona só se o manager for do tipo 'Qt5agg', 
             # que é o caso do Spyder. Para outros managers, o comando é diferente
             plt.get_current_fig_manager().window.showMaximized()
             if save:
-                plt.savefig(save_folder + "\\multiplot_" + save_string + "_to_" + y, bbox_inches='tight')
+                plt.savefig(save_folder + "\\multiplot_" + save_string + "_to_" + output, bbox_inches='tight')
         
         # Se chegou na borda da direita
-        elif (plot_index[1] == size-1):
+        elif (plot_index[1] == size[1] - 1):
             plot_index[1] = 0
             plot_index[0] += 1
         else:
@@ -170,7 +212,7 @@ def multiplots(dictionary, raw_data, size=3, save=False, save_folder="analysis",
          fig.set_size_inches(17, 9.5)
          plt.get_current_fig_manager().window.showMaximized()
          if save:
-             plt.savefig(save_folder + "\\multiplot_" + save_string + "_to_" + y, bbox_inches='tight')
+             plt.savefig(save_folder + "\\multiplot_" + save_string + "_to_" + output, bbox_inches='tight')
              
     return
              

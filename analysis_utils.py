@@ -1,23 +1,25 @@
 import data_utils as du
 
-
+# Cria o dicionário de modelos para exportação ao MPA
+# O .pickle salvo é convertido em XML por um programa externo que a Carolina desenvolveu
 def create_model_dict(dictionary):
     model_dict = {}
 
-    for y in dictionary:
+    for output in dictionary:
         
         try:
-            regressors = dictionary[y]["model"]["regressors"]
+            regressors = dictionary[output]["model"]["regressors"]
             
-            model_weights = dictionary[y]["model"]["weights"]
+            model_weights = dictionary[output]["model"]["weights"]
             
-            K = dictionary[y]["model"]["K"]
+            K = dictionary[output]["model"]["K"]
             
         except KeyError:
             continue
         
         variables = list(regressors.index)
 
+        # Colocanda no formato que foi combinando
         
         weights = [model_weights[0], model_weights[2]]
         
@@ -28,7 +30,7 @@ def create_model_dict(dictionary):
         for variable in variables:
             regressors_object[variable] = regressors[variable]
         
-        model_dict[y] = {
+        model_dict[output] = {
                 "weights" : weights,
                 "bias" : bias,
                 "n_output" : 1,
@@ -62,12 +64,12 @@ def run_analysis(dictionary):
 
 def get_selected_regressors(dictionary):
     selected_regressors = {}
-    for y in dictionary:
+    for output in dictionary:
         try:
-            selected_regressors[y] = dictionary[y]["input selection results"]["selected regressors"]
+            selected_regressors[output] = dictionary[output]["input selection results"]["selected regressors"]
                 
         except KeyError:
-            selected_regressors[y] = "None"
+            selected_regressors[output] = "None"
 
     return selected_regressors
 
@@ -75,19 +77,19 @@ def get_selected_regressors(dictionary):
 def find_u_independent_models(dictionary):
     
     u_independent_outpus = []
-    for y in dictionary:
+    for output in dictionary:
         try:
-            regressors = dictionary[y]["model"]["regressors"]
+            regressors = dictionary[output]["model"]["regressors"]
             
             variables = list(regressors.index)
             
-            u_independent_outpus.append(y)
+            u_independent_outpus.append(output)
             
             for variable in variables:
                 
                 if ("u" in variable) and (regressors[variable] > 0):
                     
-                    u_independent_outpus.remove(y)
+                    u_independent_outpus.remove(output)
                     break
                 
         except KeyError:
@@ -107,16 +109,16 @@ def get_execution_time_info(dictionary):
     inputs_sum = 0
     num_ouputs = 0
     
-    for y in dictionary:
+    for output in dictionary:
         try:
-            K_time = dictionary[y]["K selection results"]["execution time"]
-            inputs_time = dictionary[y]["input selection results"]["execution time"]
+            K_time = dictionary[output]["K selection results"]["execution time"]
+            inputs_time = dictionary[output]["input selection results"]["execution time"]
             
             # Pega só a parte numérica da string e converte para float
             K_time = float(K_time.split()[0])
             inputs_time = float(inputs_time.split()[0])
             
-            info[y] = "input selection: " + str(round(inputs_time, 2)) + " mins, K selection: " + \
+            info[output] = "input selection: " + str(round(inputs_time, 2)) + " mins, K selection: " + \
             str(round(K_time, 2)) + " mins"
             
             K_sum += K_time
@@ -125,17 +127,17 @@ def get_execution_time_info(dictionary):
             
             if K_time > max_K:
                 max_K = K_time
-                info["Max K selection time"] = y + ": " + str( round(max_K, 2)) + " minutes"
+                info["Max K selection time"] = output + ": " + str( round(max_K, 2)) + " minutes"
             elif K_time < min_K:
                 min_K = K_time
-                info["Min K selection time"] = y + ": " + str( round(min_K, 2)) + " minutes"
+                info["Min K selection time"] = output + ": " + str( round(min_K, 2)) + " minutes"
                 
             if inputs_time > max_inputs:
                 max_inputs = inputs_time
-                info["Max input selection time"] = y + ": " + str( round(max_inputs, 2)) + " minutes"
+                info["Max input selection time"] = output + ": " + str( round(max_inputs, 2)) + " minutes"
             elif inputs_time < min_inputs:
                 min_inputs = inputs_time
-                info["Min input selection time"] = y + ": " + str( round(min_inputs, 2)) + " minutes"
+                info["Min input selection time"] = output + ": " + str( round(min_inputs, 2)) + " minutes"
                    
         except KeyError:
             continue
@@ -150,9 +152,9 @@ def u_participation(dictionary):
     
     u_participation = {}   
              
-    for y in dictionary:
+    for output in dictionary:
         try:
-            regressors = dictionary[y]["model"]["regressors"]
+            regressors = dictionary[output]["model"]["regressors"]
             
             variables = regressors.index
             
@@ -160,12 +162,12 @@ def u_participation(dictionary):
                 
                 if ('u' in variable) and (regressors[variable] > 0):
                     try:
-                        u_participation[variable].append(y)
+                        u_participation[variable].append(output)
                     except KeyError:
-                        u_participation[variable] = [y]
+                        u_participation[variable] = [output]
                   
         except KeyError:
-            print("No regressors found for " + y)
+            print("No regressors found for " + output)
             continue
     
     return u_participation
@@ -174,13 +176,13 @@ def u_participation(dictionary):
 def get_dependency_masks(dictionary):
     
     masks = {}
-    for y in dictionary:
+    for output in dictionary:
         try:
-            dependency = dictionary[y]["dependency mask"]
-            masks[y] = dependency
+            dependency = dictionary[output]["dependency mask"]
+            masks[output] = dependency
             
         except KeyError:
-            masks[y] = "N/A"
+            masks[output] = "N/A"
             
     return masks
 
@@ -188,15 +190,15 @@ def get_dependency_masks(dictionary):
 def get_K_info(dictionary):
     
     K_info = {}
-    for y in dictionary:
+    for output in dictionary:
         try:
-            K_selection_results = dictionary[y]["K selection results"]
+            K_selection_results = dictionary[output]["K selection results"]
             
             for key, value in K_selection_results.items():
                 
                 try:
                     SSE_test = value["SSE test"]
-                    K_info[y] = key + ", SSE test = " + str(SSE_test)
+                    K_info[output] = key + ", SSE test = " + str(SSE_test)
                 except (TypeError, KeyError):
                     pass    
         except KeyError:
