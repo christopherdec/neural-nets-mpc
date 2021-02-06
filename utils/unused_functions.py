@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Funções não utilizadas atualmente
 
 Contém funções desenvolvidas que não são mais utilizadas no código,

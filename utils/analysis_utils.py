@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Módulo para análise pós-criação dos modelos"""
 
 from .data_utils import save_pickle
@@ -184,7 +185,6 @@ def get_execution_time_info(dictionary):
 
             K_sum += K_time
             inputs_sum += inputs_time
-            # Não há garantia de que len(dictionary) funcionaria sempre
             num_ouputs += 1
 
             if K_time > max_K:

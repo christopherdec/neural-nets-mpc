@@ -1,113 +1,141 @@
 # Neural Nets MPC
 
-Programa em Python para identificação de sistemas com redes neurais do tipo DLP, com o intuito de posterior utilização dos modelos obtidos como modelo de processo por um controlador preditivo (MPC).
+Programa em Python para identificação de sistemas com redes neurais do tipo DLP, a ideia é posteriormente utilizar os modelos obtidos como modelo de processo em um controlador preditivo (MPC).
 
-Desenvolvido como estágio obrigatório do curso de Eng. de Controle e Automação, fazendo parte do projeto SCoPI dentro do projeto de pesquisa "Desenvolvimento de Algoritmos de Controle Preditivo Não Linear para Plataformas de Produção de Petróleo: Fase 2".
+Desenvolvido como projeto de estágio obrigatório do curso de Eng. de Controle e Automação.
 
+<!--
 #### Principais tecnologias utilizadas
 
 - [Python](https://www.python.org/)
 - [TensorFlow](https://www.tensorflow.org/api_docs/python/tf/keras)
 - [Pandas](https://pandas.pydata.org/)
+-->
 
 ## Pré-requisitos
 
-Recomenda-se a utilização de um gerenciador de pacotes como o [Anaconda](https://www.anaconda.com/), visto que possibilita a criação de environments isolados para cada projeto. No início do desenvolvimento, a versão do Python instalada em meu computador ainda não era suportada pelo TensorFlow, e o Anaconda permitiu a criação de um environment específico para o projeto, utilizando uma versão mais antiga da Python.
+Recomenda-se a utilização de um gerenciador de pacotes como o [Anaconda](https://www.anaconda.com/) ou [Miniconda](https://docs.conda.io/en/latest/miniconda.html), visto que possibilitam a criação de ambientes de desenvolvimento isolados para cada projeto. 
 
-O arquivo requirements.txt contém todas as bibliotecas utilizadas no environment do projeto. Após a instalação do Anaconda, um novo environment pode ser criado com estes requirements com o seguinte comando:
+<!--
+No início do desenvolvimento, a versão do Python instalada em meu computador ainda não era suportada pelo TensorFlow, e o Anaconda permitiu a criação de um environment específico para o projeto, utilizando uma versão mais antiga da Python.
+-->
+
+O arquivo ```requirements.txt``` contém uma lista com todas as bibliotecas utilizadas no environment do projeto. Após a instalação do Anaconda, um novo environment, com estas bibliotecas, pode ser criado com o seguinte comando:
 
 ```bash
 conda create --name neural-nets-mpc --file requirements.txt
+# Após criação e ativação do environment, recomenda-se buscar atualizações com
+conda update --all
 ```
 
-Para execução do código, é recomendado utilizar o Spyder IDE, que já vem com o Anaconda. Sua interface lembra a do Matlab, e a vantagem é o Variable Explorer, indispensável para inspeção dos dicionários de treinamento e análise gerados pelo código.
+Para execução do código, é recomendado utilizar o [Spyder IDE](https://www.spyder-ide.org/), também instalável pelo próprio Anaconda. Sua interface lembra a do Matlab, e a maior utilidade dessa IDE é o Variable Explorer, indispensável para inspeção dos dicionários de treinamento e análise dos modelos neurais obtidos.
 
 ## Relatório e mudanças
 
-É possível ler meu relatório do estágio, que explica todo o estudo feito na área de identificação de sistemas com redes neurais. A seção 5 tem uma breve explicação sobre o código. Porém, desde então, algumas mudanças estruturais foram feitas, como:
+Meu relatório do estágio está salvo na pasta ```docs```, e explica em detalhes o estudo que foi efetuado na área de identificação de sistemas com redes neurais, além da ideia por trás do algoritmo de identificação. Porém, desde sua escrita, algumas mudanças foram feitas no código, como:
 
-- adequação à PEP8
-- organização dos arquivos auxiliares em no package "utils"
-- criação de unused_functions.py para guardar funções não mais utilizadas
-- documentação do projeto com Docstrings e Sphinx
-- desenvolvimento da versão decremental do algoritmo de input selection
+- adequação ao guia [PEP8](https://www.python.org/dev/peps/pep-0008/);
+- organização dos arquivos auxiliares em no package ```utils```;
+- documentação do projeto com docstrings e [Sphinx](https://www.sphinx-doc.org/en/master/index.html);
+- desenvolvimento da versão decremental do algoritmo de input selection, que substituiu a versão anterior (agora guardada em ```unused_functions.py```);
+- utilização da [correlação](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.corr.html) entre as variáveis de entrada e saída no início do algoritmo de input selection, para filtragem inicial de variáveis.
 
 ## Documentação
 
-Todas as funções e módulos do código foram feitos com a utilização de docstrings. A tool Sphinx foi utilizada para extrair todos esses docstrings numa página de HTML, que pode ser utilizada para consulta rápida.
+Todo o código foi documentado com a utilização de docstrings. A ferramenta [Sphinx](https://www.sphinx-doc.org/en/master/index.html) foi utilizada para gerar uma página html a partir desses docstrings. Para visualizar a documentação, basta clicar no atalho ```Abrir Documentação```, que está na pasta ```docs```.
 
-Para visualizar a documentação, abrir o arquivo docs\\_build\html\index.html.
+Para gerar a documentação novamente, basta abrir o terminal do Anaconda na pasta ```docs``` e executar o comando ```make html```. Também é necessário instalar o tema com:
 
-Para atualizar a documentação, ir na pasta docs com o terminal e digitar make html
+```bash
+pip install sphinx-rtd-theme
+```
 
-Tutorial de utilização do Sphinx pode ser visto neste [link](https://www.youtube.com/watch?v=b4iFyrLQQh4)
+É importante que não haja nenhum código "solto" na hora de realizar a documentação, pois o Sphinx importa todos os arquivos, e tudo que está solto é executado. Por isso, foi necessário adicionar o protective wrapper na ```main.py```.
 
-É importante que não haja nenhum código "solto" na hora de realizar a documentação, pois o Sphinx importa todos os arquivos, e código solto seria executado. Por isso o protective wrapper na main.py.
+<center><a href="https://www.youtube.com/watch?v=b4iFyrLQQh4">Tutorial do Sphinx</a></center>
 
 ## Organização do projeto
 
-### \data\
+#### \data
 
-Na pasta "data" é onde estão guardados os dados que podem ser utilizados para obtenção de modelos neurais. 
+Nesta pasta estão guardados os dados que são utilizados para obtenção de modelos neurais. Talvez os dados reais do sistema não estejam disponíveis no repositório, mas os do simulink e do emso sim.
 
 - Batches 1, 2 e 3 são conjuntos de dados do sistema real de compressão de gás.
 
-- Dados de "emso_simulator" foram gerados numa iteração prévia do projeto em um simulador de um sistema de compressão de gás. 
+- ```emso_simulator``` é um conjunto que foi gerado numa iteração prévia do projeto, com um simulador do sistema.
 
-- Dados de "simulink" foram gerados num sistema simples na ferramente de simulação [Simulink](https://www.mathworks.com/products/simulink.html), do [Matlab](https://www.mathworks.com/products/matlab.html). com o intuito de validar os algoritmos de seleção de estrutura com dados gerados por um modelo totalmente conhecido. O arquivo .slx está nessa pasta e fornece um ponto de partida para a geração de um novo conjunto de dados.
+- ```simulink``` é um conjunto gerado a partir de um sistema simples desenvolvido na ferramente de simulação [Simulink](https://www.mathworks.com/products/simulink.html), do [Matlab](https://www.mathworks.com/products/matlab.html), com o intuito de validar o algoritmo de input selection ao utilizar um modelo cuja estrutura é conhecida.
 
-Mais informações sobre os dados podem ser encontradas na documentação da função "load_data()", do módulo analysis_utils, inclusive o formato adequado para a utilização de novos conjuntos de dados.
+A documentação da função ```analysis_utils.load_data``` contém mais informações sobre esses conjuntos, e também indica como pode ser feito para importação de novos conjutnos de dados.
 
-### \analysis\
+#### \analysis
 
-A pasta analysis é onde são guardados os três dicionários (de treinamento, análise e modelos), juntamente com os plots. Ao trocar o conjunto de dados ou parâmetros de execução, é recomendado criar manualmente uma pasta backup aqui e arrastar o conteúdo já obtido para dentro, evitando a perda já que os resultados serão sobrescritos.
+Todos os resultados são guardados nessa pasta, incluindo os três dicionários (de treinamento, análise e modelos) e os plots que forem efetuados.
 
-### \docs\
+Nota-se que é possível, por exemplo, criar os modelos de y1 até y5, analisar os resultados e depois continuar de y6 em diante sem perder os resultados, porém se recriar o modelo de y1, o modelo anterior é sobrescrito.
 
-Contém a documentação do projeto. Todos os arquivos foram gerados pelo Sphinx. Ver a seção de documentação para mais informações.
+Por isso, ao trocar o conjunto de dados ou parâmetros de execução, é necessário criar uma pasta backup e arrastar para dentro o conteúdo que não se quer perder.
 
-### \misc\
+#### \docs
 
-Contém alguns programas de testes, dentre eles o comparison_test.py, que permite comparar o desempenho de modelos neurais com tipos de redes e horizontes diferentes para um mesmo conjunto de dados e regressores.
+Contém a documentação do projeto. Ver a seção sobre a documentação para mais informações.
 
-### \utils\
+#### \misc
 
-Pacote de utilidades. Contém as funcionalidades que são chamadas pelo arquivo principal (main.py) para manipulação de dados, construção e análise de modelos.
+Contém alguns programas extras, dentre eles o ```comparison_test.py```, que permite comparar o desempenho de modelos neurais treinados em horizontes diferentes e com um mesmo conjunto de dados e regressores.
+
+### \utils
+
+Pacote de utilidades. Contém as funcionalidades que são chamadas pelo arquivo principal ```main.py``` para manipulação de dados, construção e análise de modelos.
 
 ## Exemplo de utilização
 
-Neste exemplo, vamos criar um modelo de rede neural para os dados levantados com o modelo de testes no Simulink.
+Neste exemplo, cria-se um modelo de rede neural para o conjunto de dados levantados com o modelo de testes no Simulink.
 
 ### Preparação
 
-- Verificar que a pasta \analysis\ está vazia (só com os folders de backup). Ao final da execução, é esperada a criação dos três dicionários (training, analysis e model), e duas figuras de plots.
+- Verificar que a pasta ```analysis``` está vazia, com exceção das pastas de backup. Ao final da execução, é esperado a criação dos três dicionários (training, analysis e model) e duas figuras de plots;
 
-- Abrir o main.py no Spyder
+- Abrir o ```main.py``` no Spyder;
 
-- Verificar o carregamento de dados com du.load_data("simulink"). Isso carrega os dados do simulink. Esse sistema tem apenas uma saída 'y', portanto apenas um modelo será criado.
+- Verificar o carregamento de dados com ```du.load_data("simulink")```. Esse conjunto de dados tem apenas uma saída (y1), portanto apenas um modelo DLP será criado;
 
-- training_dictionary será inicializado como um objeto vazio, pois ainda não existe um dicionario.pickle salvo na pasta analysis
+- ```training_dictionary``` será inicializado como um objeto vazio, pois ainda não existe um ```dicionario.pickle``` salvo na pasta ```analysis```;
 
-- Nas configurações de execução, certificar de que "create models" = True. O resto das configurações devem ficar como estão.
+- Nas configurações de execução, certificar-se de que ```"create models" = True```. Aconselho deixar o resto das configurações como estão no commit, mas ler os comentários sobre cada uma. Depois, pode-se testar configurações diferentes;
 
-A criação de modelos tem duas etapas: primeiro, a seleção de inputs é chamada, que define o melhor conjunto de variáveis e ordens para usar como input do modelo. Os dados do simulink foram gerados com um objetivo específico de testar esse algoritmo. O modelo original é uma função do tipo:
+- Executar.
 
-<center><bold>
+### Execução
+
+A primeira etapa da criação de um modelo é a seleção de inputs, que define o melhor conjunto de variáveis e ordens para usar como entrada do modelo. Os dados do Simulink foram gerados com um objetivo específico de testar essa etapa. O modelo original segue uma função do tipo:
+
+```bash
 y1(k) = u1(k-1) + u4(k-1) + u4(k-2) + y1(k-1) + y1(k-2) + y1(k-3)
-</bold></center>
+# coeficientes desconhecidos (omitidos) multiplicam cada uma
+# destas variáveis, eles são obtidos com o treinamento da rede
+```
 
-Logo é esperado que os inputs selecionados como entradas do modelo sejam representados por um "regressor" do tipo:
+Logo, é esperado que os inputs selecionados pelo algoritmo sejam representados por um ```regressor``` contendo os seguintes valores:
 
-<center><bold>
-regressor = [u1 = 1, u2 = 0, u3 = 0, u4 = 2, y1 = 3]
-</bold></center>
+```bash
+regressor: [u1 = 1, u2 = 0, u3 = 0, u4 = 2, y1 = 3]
+# ou ainda
+regressor: [u1 = 1, u4 = 2, y1 = 3]
+# esse regressor simboliza exatamente a função anterior
+```
 
-Como os valores de u2 e u3 são zero constante, o algoritmo não consegue selecionar a ordem zero para estar variáveis. Este é um detalhe específico desse conjunto de dados. O que importa para o teste ser bem sucedido é que as ordens para as variáveis u1, u4 e y1 estejam corretas.
+O número associado a cada variável de entrada indica a ordem desta, achada pelo algoritmo. Ter ordem igual a 0 significa que a variável é desconsiderada, sendo suprimida do ```regressor```.
 
-Tendo definidos os inputs, a segunda etapa é a determinação do número de neurônios na camada oculta, denominado K. O modelo retornado na segunda etapa já é o modelo final treinado para a saída em questão. Esse processo deve ser efetuado para cada saída do sistema. No caso do modelo do simulink, como só tem uma saída, só é criado o modelo neural para y1.
+Caso se tenha o Matlab instalado, é possível abrir o modelo .slx do Simulink, que está salvo na pasta ```data\simulink```. Lá é possível ver que as variáveis u2 e u3 não estão conectadas ao sistema. Isso foi feito de propósito, para ver se o algoritmo conseguiria detectar isso e regredir as ordens destas variáveis até 0, eliminando-as da seleção de inputs.
 
-Após a criação dos modelos, tem-se a etapa de análise, onde o dicionário de análise é criado. Este pode ser inspecionado com o Variable Inspector do Spyder para ver informações úteis sobre os modelos obtidos.
 
-O dicionário de modelos também é criado. Este não é relevante dentro do programa, e serve apenas para ser exportado ao programa que fará a leitura dos modelos obtidos e converterá em XML para poder rodar no MPA.
+Tendo definidos os inputs, a segunda etapa é a determinação do número de neurônios na camada oculta (K). Esse processo é explicado na documentação da própria função, sendo bem straight-forward. O modelo retornado ao final já é o modelo definitivo para a saída em questão.
 
-A última etapa será o plot dos modelos. Primeiro é feito os singleplots, onde um plot é feito para cada um dos modelos que foram criados (que estiverem no training_dictionary). Em seguida, multiplots são feitos, onde várias respostas aparecem junto no mesmo plot. As respostas são as mesmas, a única razão de fazer multiplots é para compactar os plots caso se deseje mostrar vários de uma vez.
+Todo esse processo, de input selection e K selection, deve ser efetuado para cada saída do sistema (se este for MIMO), já que utilizam-se DLPs. No caso do modelo do Simulink, como só tem uma saída, só é criado o modelo para y1.
+
+Após a criação dos modelos, vem a etapa de análise, onde o dicionário de análise é criado. Este pode ser inspecionado com o Variable Inspector do Spyder para ver informações úteis sobre os modelos obtidos, como tempo de execução, participação das variáveis, etc.
+
+O dicionário de modelos também é criado. Este não é relevante dentro do programa (todos os parâmetros dos modelos criados já estão no dicionário de treinamento), servindo apenas para exportação a um programa externo responsável por convertê-lo em um arquivo XML para rodar no MPA.
+
+A última etapa são os plots. Primeiro são feitos os singleplots, onde um plot é feito para cada um dos modelos que foram criados (que estiverem no ```training_dictionary```). Em seguida, são feitos os multipltos, que são basicamente alguns singleplots aparecendo junto no mesmo plot, o que pode ser útil para apresentações.

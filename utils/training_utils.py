@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Módulo de funções para criação e treinamento de modelos
 
 Contém os algoritmos de input selection e K selection, para seleção da
@@ -19,8 +20,6 @@ def create_models(exec_cfg, training_dictionary, raw_data):
 
         output = 'y' + str(y)
 
-        print("Initializing training operations for output " + output)
-
         try:
             dependency = training_dictionary[output]["dependency mask"]
         except KeyError:
@@ -40,6 +39,8 @@ def create_models(exec_cfg, training_dictionary, raw_data):
             data = du.trim_data(raw_data, output, dependency)
 
         if exec_cfg["find inputs"]:
+            print("Initializing input selection for " + output + " model")
+
             regressors, input_selection_results = \
                 input_selection_decremental(
                     data, output, exec_cfg["input selection params"])
@@ -57,6 +58,8 @@ def create_models(exec_cfg, training_dictionary, raw_data):
                       ", please run input selection first")
 
         if exec_cfg["find K"]:
+            print("Initializing K selection for " + output + " model")
+
             K, weights, K_selection_results = K_selection(
                 data, regressors, output, exec_cfg["K selection params"])
 
@@ -110,6 +113,7 @@ def input_selection_decremental(data, output, params):
     optimizer = params["optimizer"]
     loss = params["loss"]
     scaler = params["scaler"]
+    min_abs_corr = params["min abs correlation"]
 
     # Para casos em que os dados são muito grandes (100k+), pode-se pegar
     # apenas uma parte
@@ -129,10 +133,32 @@ def input_selection_decremental(data, output, params):
         data=np.ones(len(variables)) * starting_order,
         index=variables, dtype=int, name="ordem")
 
+    X, Y = du.build_sets(data, regressors, output, scaler=scaler)
+
+    # Filtra os regressores que não tem correlação significativa com a saída,
+    # acelerando bastante o processo
+    if min_abs_corr > 0:
+
+        print("Filtering regressors with abs output correlation lesser" +
+              f" than {min_abs_corr}")
+
+        regressors, no_filtered = du.filter_by_correlation(min_abs_corr,
+                                                           X,
+                                                           Y,
+                                                           output)
+
+        print(f"{no_filtered} regressors filtered")
+        search_results["initial regressors filtered"] = no_filtered
+
+        variables = regressors.index
+
+        # Recalcula X e Y baseado no novo regressors
+        X, Y = du.build_sets(data, regressors, output, scaler=scaler)
+
     # Calcula performance com regressors inicial
     print("Testing initial regressors")
     print(regressors.to_string())
-    X, Y = du.build_sets(data, regressors, output, scaler=scaler)
+
     if horizon > 1:
         X, Y, y0 = du.recursive_sets(
             X, Y, output, horizon, regressors[output], shuffle=True)
@@ -177,7 +203,7 @@ def input_selection_decremental(data, output, params):
         else:
             loss_for_training = history.history['loss'][-1]
 
-        print("Loss for training = " + str(loss_for_training))
+        # print("Loss for training = " + str(loss_for_training))
 
         loss_sum_for_initial += loss_for_training
 
@@ -198,6 +224,8 @@ def input_selection_decremental(data, output, params):
         # Flag importante para sinalizar um novo estágio
         new_stage = True
 
+        print("STAGE ====== " + str(stage + 1))
+
         # cada variável representa uma opção, no caso a opção de decrementar a
         # sua ordem em 1, a opção que tiver best_option_loss é escolhida
         for option in variables:
@@ -212,8 +240,8 @@ def input_selection_decremental(data, output, params):
 
             testing_regressors[option] -= 1
 
-            print("Starting stage " + str(stage + 1) +
-                  ", option = " + option + ", testing:")
+            print("stage " + str(stage + 1) + ", option = " +
+                  option + ", testing:")
             print(testing_regressors.to_string())
 
             X, Y = du.build_sets(
@@ -293,8 +321,6 @@ def input_selection_decremental(data, output, params):
                 break
 
         regressors = best_option_regressors.copy(deep=True)
-
-        print("STAGE ====== " + str(stage))
 
         # se a loss da melhor opção recebeu a melhor loss overall, significa
         # que não houve melhoria significativa de desempenho nesse estágio
@@ -421,15 +447,18 @@ def K_selection(data, regressors, output, params):
         X, Y = np.array(X), np.array(Y)
 
     """
-    Essa chamada faz o split do test set, para ser utilizada ao final para
-    avaliação do melhor modelo obtido. O split de treino/validação é feito
-    pelo método model.fit quando os modelos são treinados. Como shuffle já
-    foi feito na recursive_sets, aqui é necessário somente particionamento.
+    O K selection usa three-split (train/val/test)
+    Essa chamada faz o split do test, para ser utilizado no final para
+    avaliação do melhor modelo obtido. O split de treino/validação será feito
+    pelo método model.fit quando os modelos são treinados.
+    O embaralhamento (shuffle) já foi feito logo acima
     """
-    if horizon > 1 and test_size is not False:
+    # Quando horizon > 1, tem os conjuntos de y0 também, por isso é necessário
+    # estes if/elif
+    if horizon > 1 and test_size > 0:
         X, X_test, Y, Y_test, y0, y0_test = train_test_split(
             X, Y, y0, test_size=test_size, random_state=42)
-    elif test_size is not False:
+    elif test_size > 0:
         X, X_test, Y, Y_test = train_test_split(
             X, Y, test_size=test_size, random_state=42)
 
@@ -463,9 +492,10 @@ def K_selection(data, regressors, output, params):
                     verbose=0,
                     callbacks=[early_stop])
 
-            loss_for_init = history.history['val_loss'][-1]
-
-            # loss_for_init = history.history['loss'][-1]
+            if validation_size > 0:
+                loss_for_init = history.history['val_loss'][-1]
+            else:
+                loss_for_init = history.history['loss'][-1]
 
             if (initialization == 0) or (loss_for_init < best_loss_for_K):
                 best_loss_for_K = loss_for_init
@@ -507,15 +537,27 @@ def K_selection(data, regressors, output, params):
             stop_reason = "target loss reached"
             break
 
-    if test_size is not False:
+    if test_size > 0:
         print("Testando modelo obtido no conjunto de teste")
-        model = ParallelModel(horizon, best_K)
-        # Força o custom model a definir a input layer shape, possibilitando
-        # setar os weights
-        model.predict([X[0:1], y0[0:1]], verbose=False)
+        
+        if horizon > 1:
+            model = ParallelModel(horizon, best_K)
+            # Força o custom model a definir a input layer shape, 
+            # permitindo setar os weights.
+            model.predict([X[0:1], y0[0:1]], verbose=False)
+        else:
+            model = serial_parallel_model(best_K)
+            model.predict(X[0:1], verbose=False)
+        
+        # Recebe os weights do melhor modelo e prediz o conjunto de testes
         model.set_weights(best_weights)
-        search_results["Loss in test set"] = model.evaluate(
-            [X_test, y0_test], Y_test)
+        
+        if horizon > 1:
+            search_results["Loss in test set"] = model.evaluate(
+                [X_test, y0_test], Y_test)
+        else:
+            search_results["Loss in test set"] = model.evaluate(
+                X_test, Y_test)
 
     search_results["best K"] = best_K
 

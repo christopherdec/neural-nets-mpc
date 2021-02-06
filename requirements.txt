@@ -186,7 +186,6 @@ six=1.15.0=py37haa95532_0
 snowballstemmer=2.0.0=py_0
 sortedcontainers=2.3.0=pyhd3eb1b0_0
 sphinx=3.4.3=pyhd3eb1b0_0
-sphinx-rtd-theme=0.5.1=pypi_0
 sphinxcontrib-applehelp=1.0.2=py_0
 sphinxcontrib-devhelp=1.0.2=py_0
 sphinxcontrib-htmlhelp=1.0.3=py_0

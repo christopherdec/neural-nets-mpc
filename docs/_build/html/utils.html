@@ -489,8 +489,39 @@ Y_scaler (optional): scaler do scikit-learn</p>
 </dd></dl>
 
 <dl class="py function">
+<dt id="utils.data_utils.filter_by_correlation">
+<code class="sig-name descname">filter_by_correlation</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">min_abs_corr</span></em>, <em class="sig-param"><span class="n">X</span></em>, <em class="sig-param"><span class="n">Y</span></em>, <em class="sig-param"><span class="n">output</span></em><span class="sig-paren">)</span><a class="headerlink" href="#utils.data_utils.filter_by_correlation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calcula a correlação entre as variáveis de entrada (determinadas
+por um ‘regressors’) e a variável de saída do sistema (output), então
+filtrar (elimina) as variáveis cuja correlação for menor do que
+min_abs_corr.</p>
+<p>Esta função é chamada no início do input selection, e
+acelerando o processo de criação dos modelos.</p>
+<p>Lembrar que (alta) correlação não implica em causalidade, mas uma baixa
+correlação indica que a variável não tem influência na saída.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>min_abs_corr</strong> (<em>float</em>) – menor correlação aceitável, valor absoluto em</p></li>
+<li><p><strong>porcentagem</strong> – </p></li>
+<li><p><strong>X</strong> (<em>pd.DataFrame</em>) – conjunto de entradas</p></li>
+<li><p><strong>Y</strong> (<em>pd.DataFrame</em>) – conjunto de saídas esperadas</p></li>
+<li><p><strong>output</strong> (<em>string</em>) – saída para a qual o modelo está sendo criado</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>novo regressors filtrado
+no_filtered (int): qtd de variáveis filtradas</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>regressors (pd.Series)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt id="utils.data_utils.load_data">
-<code class="sig-name descname">load_data</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">batch</span><span class="o">=</span><span class="default_value">'batch_1'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#utils.data_utils.load_data" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">load_data</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">batch</span><span class="o">=</span><span class="default_value">'batch_1'</span></em>, <em class="sig-param"><span class="n">root</span><span class="o">=</span><span class="default_value">'.'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#utils.data_utils.load_data" title="Permalink to this definition">¶</a></dt>
 <dd><p>Função utilizada para carregar os dados de treinamento</p>
 <p>Opções atuais: “batch_1”, “batch_2”, “batch_3”, “emso” ou “simulink”.
 É necessário criar uma nova opção para importar novos dados. Deve retornar
@@ -498,7 +529,10 @@ um DataFrame com as colunas no formato “u1, u2, …, uNu, y1, y2, …,
 yNy”.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>batch</strong> (<em>str</em><em>, </em><em>optional</em>) – Defaults to “batch_1”.</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>batch</strong> (<em>str</em><em>, </em><em>optional</em>) – Defaults to “batch_1”.</p></li>
+<li><p><strong>root</strong> (<em>str</em><em>, </em><em>optional</em>) – Root directory. Defaults to “.”.</p></li>
+</ul>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p>contém as amostras das variáveis do sistema
@@ -578,7 +612,30 @@ da saída, para cada janela.</p>
 <dl class="py function">
 <dt id="utils.data_utils.shuffle_sets">
 <code class="sig-name descname">shuffle_sets</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">X</span></em>, <em class="sig-param"><span class="n">Y</span></em>, <em class="sig-param"><span class="n">return_array</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#utils.data_utils.shuffle_sets" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Embaralha os conjuntos X e Y. Deve melhorar a generalização
+dos modelos criados, pois após o split, os conjuntos de treino,
+teste e validação ficam mais homogêneos.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>pd.DataFrame</em>) – conjunto de entradas</p></li>
+<li><p><strong>Y</strong> (<em>pd.DataFrame</em>) – conjunto de saídas esperadas</p></li>
+<li><p><strong>return_array</strong> (<em>bool</em><em>, </em><em>optional</em>) – Se true, casta um np.array() sobre</p></li>
+<li><p><strong>e Y antes de retornar. Usado pelo modelo serial-parallel</strong><strong> (</strong><strong>horionte</strong> (<em>X</em>) – </p></li>
+<li><p><strong>1</strong><strong>)</strong> (<em>)</em><em>, </em><em>mas usa a shuffle_sets</em><em>(</em>) – </p></li>
+<li><p><strong>ele não chama a recursive_sets</strong> (<em>pois</em>) – </p></li>
+<li><p><strong>forma externa. Defaults to False.</strong> (<em>de</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>X embaralhado
+Y (np.array or pd.DataFrame): Y embaralhado</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>X (np.array or pd.DataFrame)</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt id="utils.data_utils.trim_data">

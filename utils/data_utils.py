@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Módulo de carregamento e preparação de dados, também tem funções para
 o carregamento e salvamento de objetos .pickle
 """
@@ -9,11 +10,12 @@ import sklearn.utils
 import scipy.io
 import pandas as pd
 import math
+from collections import Counter
 
 # Função utilizada para carregar os dados de treinamento
 
 
-def load_data(batch="batch_1"):
+def load_data(batch="batch_1", root="."):
     """Função utilizada para carregar os dados de treinamento
 
     Opções atuais: "batch_1", "batch_2", "batch_3", "emso" ou "simulink".
@@ -23,6 +25,7 @@ def load_data(batch="batch_1"):
 
     Args:
         batch (str, optional): Defaults to "batch_1".
+        root (str, optional): Root directory. Defaults to ".".
 
     Returns:
         raw_data (pd.DataFrame): contém as amostras das variáveis do sistema
@@ -36,8 +39,8 @@ def load_data(batch="batch_1"):
     # Tem 5 variáveis 'u' e 12 variáveis 'y'
     if batch == "batch_1":
 
-        input_ = scipy.io.loadmat("data\\batch_1\\input.mat")
-        output = scipy.io.loadmat("data\\batch_1\\output.mat")
+        input_ = scipy.io.loadmat(root + "\\data\\batch_1\\input.mat")
+        output = scipy.io.loadmat(root + "\\data\\batch_1\\output.mat")
 
         raw_data = []
         variable_names = {}
@@ -67,9 +70,9 @@ def load_data(batch="batch_1"):
     # Tem 5 variáveis 'u' e 12 variáveis 'y'
     elif batch == "batch_2":
 
-        inputs = pd.read_hdf("data\\batch_2\\input_validation.h5")
+        inputs = pd.read_hdf(root + "\\data\\batch_2\\input_validation.h5")
 
-        outputs = pd.read_hdf("data\\batch_2\\output_validation.h5")
+        outputs = pd.read_hdf(root + "\\data\\batch_2\\output_validation.h5")
 
         raw_data = pd.concat([inputs, outputs], axis=1)
 
@@ -93,9 +96,9 @@ def load_data(batch="batch_1"):
     # sincronizar as amostras. Contém 99.1k amostras
     elif batch == "batch_3":
 
-        inputs = pd.read_hdf("data\\batch_3\\inputs.h5").dropna()
+        inputs = pd.read_hdf(root + "\\data\\batch_3\\inputs.h5").dropna()
 
-        outputs = pd.read_hdf("data\\batch_3\\outputs.h5")
+        outputs = pd.read_hdf(root + "\\data\\batch_3\\outputs.h5")
 
         outputs.drop(outputs.head(2).index, inplace=True)
 
@@ -119,7 +122,7 @@ def load_data(batch="batch_1"):
     elif batch == "simulink":
 
         raw_data = scipy.io.loadmat(
-            'data\\simulink\\sistema_teste.mat')['simout']
+            root + '\\data\\simulink\\dados_simulink.mat')['simout']
 
         raw_data = pd.DataFrame(
             data=raw_data, columns=[
@@ -134,14 +137,15 @@ def load_data(batch="batch_1"):
 
         raw_data = np.transpose(
             np.array(
-                load_pickle("data\\emso_simulator\\dados18k_p74.pickle")))
+                load_pickle(root +
+                            "\\data\\emso_simulator\\dados18k_p74.pickle")))
 
-        columns = load_pickle("data/emso_simulator/columns.pickle")
+        columns = load_pickle(root + "\\data\\emso_simulator\\columns.pickle")
 
         raw_data = pd.DataFrame(data=raw_data, columns=columns)
 
         variable_names = load_pickle(
-            "data/emso_simulator/variable_names.pickle")
+            root + "\\data\\emso_simulator\\variable_names.pickle")
 
         Ny = 36
 
@@ -232,6 +236,58 @@ def trim_data(raw_data, output, dependency=None):
         data = raw_data[dependency]
 
     return data
+
+
+def filter_by_correlation(min_abs_corr, X, Y, output):
+    """Calcula a correlação entre as variáveis de entrada (determinadas
+    por um 'regressors') e a variável de saída do sistema (output), então
+    filtrar (elimina) as variáveis cuja correlação for menor do que
+    min_abs_corr.
+
+    Esta função é chamada no início do input selection, e
+    acelerando o processo de criação dos modelos.
+
+    Lembrar que (alta) correlação não implica em causalidade, mas uma baixa
+    correlação indica que a variável não tem influência na saída.
+
+    Args:
+        min_abs_corr (float): menor correlação aceitável, valor absoluto em
+        porcentagem
+        X (pd.DataFrame): conjunto de entradas
+        Y (pd.DataFrame): conjunto de saídas esperadas
+        output (string): saída para a qual o modelo está sendo criado
+
+    Returns:
+        regressors (pd.Series): novo regressors filtrado
+        no_filtered (int): qtd de variáveis filtradas
+    """
+
+    correlation = pd.concat([X, Y], axis=1).corr()[output + '(k)'].dropna()
+
+    # dropa o a correlação da saída(k) com ela mesma, que é sempre 1
+    correlation.drop(correlation.tail(1).index, inplace=True)
+
+    filtered = correlation.abs().where(lambda x: x >= min_abs_corr).dropna()
+
+    # número de variáveis filtradas, apenas para printar
+    no_filtered = len(correlation) - len(filtered)
+
+    # constrói uma lista só com os índices de "filtered", sem os "(k-...)"
+    indexes = []
+
+    for index in list(filtered.index):
+        indexes.append(index.split('(')[0])
+
+    # infere as ordens ao contar o número de duplicatas, criando um dicionário
+    # que já é o novo regressors, com {key : value} --> {variável : ordem}
+    regressors = dict(Counter(indexes))
+
+    # só falta transformá-lo em um pandas Series e retornar
+    regressors = pd.Series(data=list(regressors.values()),
+                           index=list(regressors.keys()),
+                           dtype=int, name="order")
+
+    return regressors, no_filtered
 
 
 def build_sets(
@@ -364,6 +420,22 @@ def recursive_sets(X, Y, output, horizon, y_order, shuffle=False):
 
 
 def shuffle_sets(X, Y, return_array=False):
+    """Embaralha os conjuntos X e Y. Deve melhorar a generalização
+    dos modelos criados, pois após o split, os conjuntos de treino,
+    teste e validação ficam mais homogêneos.
+
+    Args:
+        X (pd.DataFrame): conjunto de entradas
+        Y (pd.DataFrame): conjunto de saídas esperadas
+        return_array (bool, optional): Se true, casta um np.array() sobre
+        X e Y antes de retornar. Usado pelo modelo serial-parallel (horionte
+        1), pois ele não chama a recursive_sets(), mas usa a shuffle_sets()
+        de forma externa. Defaults to False.
+
+    Returns:
+        X (np.array or pd.DataFrame): X embaralhado
+        Y (np.array or pd.DataFrame): Y embaralhado
+    """
 
     index_shuf = list(range(len(X)))
 

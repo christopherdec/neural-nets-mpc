@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Módulo de modelos customizados
 
 Contém a implementação em classe de modelos do tensorflow, dentre eles

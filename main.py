@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Módulo principal
 
 Contém a função main(), que controla o fluxo de execução do código.
@@ -26,11 +27,9 @@ def main():
     tf.keras.backend.clear_session()
     # Suprime mensagens de warning do tensorflow
     tf.get_logger().setLevel('ERROR')
-    tf.autograph.experimental.do_not_convert
+    tf.autograph.set_verbosity(0)
 
-    # Carregamento de dados, no exemplo é usado o conjunto de dados levantados
-    # com o modelo do simulink , que só tem uma saída 'y' e 4 variáveis de
-    # entrada 'u'.
+    # Carregamento de dados, ver a documentação de data_utils.load_data
     raw_data, variable_names, Ny = du.load_data("simulink")
 
     # O dicionário de treinamento contém informações que vão sendo adicionadas
@@ -46,19 +45,23 @@ def main():
     # Se "create models": False, o loop de treinamentos é pulado, indo direto
     # para a análise e plots de modelos que já foram criados
     exec_cfg = {
-        "create models": True,
+        "create models": False,
         # first y e last y definem o intervalo de saídas para as quais serão
-        # criados modelos.
+        # criados modelos. Não é necessário criar todos de uma vez.
         "first y": 1,
-        "last y": Ny, # n�o precisa ser obrigatoriamente Ny
+        "last y": Ny,
         "find inputs": True,  # pode-se usar False em casos de retomada
-        "find K": True,  # se False, s� vai selecionar os inputs dos modelos
+        "find K": True,
         "input selection params": {
             # usa todas as variáveis no input selection
             # se False, só considera as variáveis 'u' e a própria saída
             "use all variables": False,
+            # valor em porcentagem da correlação entre uma entrada e a saída
+            # serve para filtrar as entradas no input selection
+            "min abs correlation": 0.5,
             # inicializações para cada opção de inputs, diminui variabilidade
-            "trains per option": 1,
+            # recomendado = 3
+            "trains per option": 3,
             "max stages": 15,
             # define quantos estágios sem melhorias para interromper a busca
             "search patience": 2,
@@ -72,7 +75,7 @@ def main():
             "horizon": 1,
             # ordem inicial das variáveis na versão decremental, ou só de y na
             # versão incremental (não mais utilizada)
-            "starting order": 3,
+            "starting order": 4,
             # para datasets muito grandes. permite utilizar só uma parte para
             # o input selection
             "partition size": 1,
@@ -85,26 +88,26 @@ def main():
             "acceptable loss": False,
             # delta mínimo para considerar uma melhora como relevante
             "min delta loss": False,
-            "structure": "DLP",   # DLP ou LSTM - geralmente DLP é mais rápido
+            "structure": "DLP",   # DLP ou LSTM ; rapidez ou desempenho
             "optimizer": "adam",  # SGD (stochastic gradient descent) ou adam
             "loss": "mse",        # Função custo mean squared errors
             # Define o escalonador a ser utilizado: MinMax (só normaliza) ou
-            # Standard (normaliza cada variável e divide pelo desvio padrão)
+            # Standard (normaliza e divide pelo desvio padrão)
             "scaler": "Standard"
         },
 
         "K selection params": {
             "K min": 3,
             "K max": 10,
-            "trains per K": 1,
+            "trains per K": 3,
             "search patience": 1,
             "max epochs": 1000,
             "early stop patience": 3,
-            "horizon": 1,             # recomendado: 1, 20, 50, ...
+            "horizon": 5,             # recomendado: 1, 5, 10, 20
             "partition size": 1,
             # K selection usa train/validation/test splits
             "validation size": 0.3,   # recomendado: 0.3
-            "test size": False,       # recomendado: 0.15, 0 se horizon = 1
+            "test size": 0.15,       # recomendado: 0.15
             "target loss": False,
             "min delta loss": False
         }
@@ -118,11 +121,11 @@ def main():
         "create model dict": True,
         "single plots": True,
         "multiplots": True,
-        "multiplot size": [2, 2],
+        "multiplot size": [2, 2], # [linhas, colunas], têm que ser > 1
         "save plots": True,
         # permite realizar os plots com um horizonte diferente do que foi
         # utilizado no K selection, padrão = "default"
-        "plots horizon": 50
+        "plots horizon": 10
     }
 
     """ Início da execução """

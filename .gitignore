@@ -1,4 +1,11 @@
 /backups
+
 /__pycache__
+
 /imagens_relatório
+
 test.py
+
+/.vscode
+
+/utils/__pycache__

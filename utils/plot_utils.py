@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """ Módulo de funções para plots
 
 Utilizado após a criação dos modelos. Contém as funções
