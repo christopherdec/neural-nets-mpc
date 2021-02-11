@@ -181,34 +181,6 @@ def save_pickle(stuff, path):
     pickle.dump(stuff, open(path, "wb"))
 
 
-def add_dependency(output, dependency):
-    """Função para informar a dependência de uma variável. Atualmente, deve ser
-    chamada no console. 'dependency' é uma lista com as variáveis que
-    influenciam na saida informada.
-
-    Carrega o training_dictionary e escreve na entrada "dependency mask" da
-    respectiva saída, salvando-o em seguida.
-
-    Args:
-        output (str): saída a ser informada a dependência, exemplo: 'y1'
-        dependency (list): variável influentes, exemplo: ['u4', 'y1', 'y3']
-    """
-    training_dictionary = load_pickle("analysis\\dictionary.pickle")
-
-    try:
-        training_dictionary[output]["dependency mask"] = dependency
-    except KeyError:
-        print(
-            "No entry found for " +
-            output +
-            " on the dictionary, creating an empty object")
-        training_dictionary[output] = {"dependency mask": dependency}
-
-    save_pickle(training_dictionary, "analysis\\dictionary.pickle")
-
-    print("Added dependency = " + str(dependency) + " for output " + output)
-
-
 def trim_data(raw_data, output, dependency=None):
     """Retorna o conjunto de dados apenas com as variáveis que serão
     utilizadas na rede neural da saída atual. Se não se sabe quais são estas

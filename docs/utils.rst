@@ -48,3 +48,11 @@ unused\_functions
    :members:
    :undoc-members:
    :show-inheritance:
+
+dependency
+------------------------------
+
+.. automodule:: utils.dependency
+   :members:
+   :undoc-members:
+   :show-inheritance:

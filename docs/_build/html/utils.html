@@ -93,6 +93,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#module-utils.plot_utils">plot_utils</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-utils.training_utils">training_utils</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-utils.unused_functions">unused_functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-utils.dependency">dependency</a></li>
 </ul>
 </li>
 </ul>
@@ -441,24 +442,6 @@ respectivo timestep</p>
 <span id="data-utils"></span><h2>data_utils<a class="headerlink" href="#module-utils.data_utils" title="Permalink to this headline">¶</a></h2>
 <p>Módulo de carregamento e preparação de dados, também tem funções para
 o carregamento e salvamento de objetos .pickle</p>
-<dl class="py function">
-<dt id="utils.data_utils.add_dependency">
-<code class="sig-name descname">add_dependency</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">output</span></em>, <em class="sig-param"><span class="n">dependency</span></em><span class="sig-paren">)</span><a class="headerlink" href="#utils.data_utils.add_dependency" title="Permalink to this definition">¶</a></dt>
-<dd><p>Função para informar a dependência de uma variável. Atualmente, deve ser
-chamada no console. ‘dependency’ é uma lista com as variáveis que
-influenciam na saida informada.</p>
-<p>Carrega o training_dictionary e escreve na entrada “dependency mask” da
-respectiva saída, salvando-o em seguida.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>output</strong> (<em>str</em>) – saída a ser informada a dependência, exemplo: ‘y1’</p></li>
-<li><p><strong>dependency</strong> (<em>list</em>) – variável influentes, exemplo: [‘u4’, ‘y1’, ‘y3’]</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
 <dl class="py function">
 <dt id="utils.data_utils.build_sets">
 <code class="sig-name descname">build_sets</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data</span></em>, <em class="sig-param"><span class="n">regressors</span></em>, <em class="sig-param"><span class="n">output</span></em>, <em class="sig-param"><span class="n">return_Y_scaler</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">scaler</span><span class="o">=</span><span class="default_value">'MinMax'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#utils.data_utils.build_sets" title="Permalink to this definition">¶</a></dt>
@@ -937,6 +920,43 @@ como tempo de execução e as escolhas feitas em cada estágio.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>best_regressors (pd.Series)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-utils.dependency">
+<span id="dependency"></span><h2>dependency<a class="headerlink" href="#module-utils.dependency" title="Permalink to this headline">¶</a></h2>
+<p>Executar este arquivo para adicionar ou remover dependências.
+Uma dependência é simplesmente a lista de variáveis que devem ser consideradas
+na entrada do modelo neural respectivo a uma das saídas do sistema.
+É uma etapa opcional, para quando se sabe de antemão quais variáveis
+influenciam numa determinada saída. Ler o README para mais informações.</p>
+<dl class="py function">
+<dt id="utils.dependency.add_dependency">
+<code class="sig-name descname">add_dependency</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">output</span></em>, <em class="sig-param"><span class="n">dependency</span></em><span class="sig-paren">)</span><a class="headerlink" href="#utils.dependency.add_dependency" title="Permalink to this definition">¶</a></dt>
+<dd><p>Função para informar a dependência de uma variável. ‘dependency’ é uma
+lista com as variáveis que influenciam na saida informada.</p>
+<p>Carrega o training_dictionary e escreve na entrada “dependency mask” da
+respectiva saída, salvando-o em seguida.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>output</strong> (<em>str</em>) – saída a ser informada a dependência, exemplo: ‘y1’</p></li>
+<li><p><strong>dependency</strong> (<em>list</em>) – variável influentes, exemplo: [‘u4’, ‘y1’, ‘y3’]</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="utils.dependency.remove_dependency">
+<code class="sig-name descname">remove_dependency</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">output</span></em><span class="sig-paren">)</span><a class="headerlink" href="#utils.dependency.remove_dependency" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove a dependência da saída informada ou de todas as saídas de uma
+só vez.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>output</strong> (<em>str</em>) – saída cuja dependência deve ser removida</p>
 </dd>
 </dl>
 </dd></dl>

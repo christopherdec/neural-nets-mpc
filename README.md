@@ -39,6 +39,7 @@ Meu relatório do estágio está salvo na pasta ```docs```, e explica em detalhe
 - documentação do projeto com docstrings e [Sphinx](https://www.sphinx-doc.org/en/master/index.html);
 - desenvolvimento da versão decremental do algoritmo de input selection, que substituiu a versão anterior (agora guardada em ```unused_functions.py```);
 - utilização da [correlação](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.corr.html) entre as variáveis de entrada e saída no início do algoritmo de input selection, para filtragem inicial de variáveis.
+- ```dependency.py``` para adição/remoção de dependências de uma saída
 
 ## Documentação
 
@@ -139,3 +140,21 @@ Após a criação dos modelos, vem a etapa de análise, onde o dicionário de an
 O dicionário de modelos também é criado. Este não é relevante dentro do programa (todos os parâmetros dos modelos criados já estão no dicionário de treinamento), servindo apenas para exportação a um programa externo responsável por convertê-lo em um arquivo XML para rodar no MPA.
 
 A última etapa são os plots. Primeiro são feitos os singleplots, onde um plot é feito para cada um dos modelos que foram criados (que estiverem no ```training_dictionary```). Em seguida, são feitos os multipltos, que são basicamente alguns singleplots aparecendo junto no mesmo plot, o que pode ser útil para apresentações.
+
+#### Explicação sobre os inputs do input selection
+
+Suponha que um sistema tem 10 variáveis de entrada e 10 variáveis de saída. Portanto, o conjunto de dados ```raw_data``` terá 20 colunas, u1...u10, y1...y10. Para cada saída, uma rede neural será criada. O input selection precisa decidir, para uma determinada rede de uma saída, quais variáveis do sistema deverão ser consideradas na entrada desta rede.
+
+No procedimento empírico utilizado nesse programa, considerar todas as 20 variáveis como possíveis candidatas seria inviavelmente lento. Por isso, são disponibilizadas algumas opções para pré-filtrar esse conjunto inicial de variáveis e auxiliar o trabalho do input selection.
+
+- O modo padrão é considerar como variáveis candidatas apenas as variáveis de entrada (u) e valores passados (regressores) da própria saída do sistema. No caso do suposto sistema, o conjunto de variáveis candidatas teria 10 variáveis 'u' + 1 variável referente a própria saída.
+
+- O segundo modo é simplesmente considerar todas as 20 variáveis. Dependendo do sistema e do tempo disponível, isso pode ser viável. Para usar esta opção, basta simplesmente alterar ```use all variables``` para ```true``` no dicionário de configurações de execução.
+
+- O terceiro modo é informando explicitamente qual conjunto de variáveis considerar para o input selection de uma determinada saída. Esse conjunto é referenciado aqui como "dependência", sendo simplesmente um array de strings que fica guardado no dicionário de treinamento e utilizado para filtrar ```raw_data``` antes do input selection começar para uma saída.
+
+Para adicionar/remover uma dependência, basta rodar o arquivo ```dependency.py```, que está na pasta de utilidades. A implementação é muito simples e pode ser entendida inspecionando o código.
+
+Um recurso que pode acelerar bastante a etapa de input selection é a filtragem de variáveis por correlação, independente de qual das três opções anteriores é utilizada.Basta alterar o parâmetro ```min abs corr``` no dicionário de execução para um valor de 0 até 1.
+
+A ideia é eliminar as variáveis cuja correlação absulta com a saída do sistema, calculada usando o próprio conjunto de dados, seja menor do que o valor informado. Apesar de correlação não implicar em causalidade, a ausência de correlação implica em ausência de causalidade.

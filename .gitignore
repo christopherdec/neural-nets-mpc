@@ -9,3 +9,7 @@ test.py
 /.vscode
 
 /utils/__pycache__
+
+/analysis/*.pickle
+
+/analysis/*.png
