@@ -59,7 +59,7 @@ pip install sphinx-rtd-theme
 
 #### \data
 
-Nesta pasta estão guardados os dados que são utilizados para obtenção de modelos neurais. Talvez os dados reais do sistema não estejam disponíveis no repositório, mas os do simulink e do emso sim.
+Nesta pasta estão guardados os dados que são utilizados para obtenção de modelos neurais. Por motivos de confidencialidade, os dados reais do sistema foram removidos desse repositório público, mas os dados do simulink e do simlador emso estão.
 
 - Batches 1, 2 e 3 são conjuntos de dados do sistema real de compressão de gás.
 
