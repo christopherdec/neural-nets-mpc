@@ -1,11 +1,11 @@
 # Neural Nets MPC
 
-Programa em Python para identificação de sistemas com redes neurais do tipo DLP, a ideia é posteriormente utilizar os modelos obtidos como modelo de processo em um controlador preditivo (MPC).
+Programa escrito em Python para identificação de sistemas com redes neurais do tipo DLP, com o intuito de utilizar o resultado como modelo de processo em um controlador preditivo (MPC).
 
-Desenvolvido como projeto de estágio obrigatório do curso de Eng. de Controle e Automação.
+Desenvolvido como projeto de estágio obrigatório do curso de Eng. de Controle e Automação - UFSC.
 
 <!--
-#### Principais tecnologias utilizadas
+#### Stack
 
 - [Python](https://www.python.org/)
 - [TensorFlow](https://www.tensorflow.org/api_docs/python/tf/keras)
@@ -14,36 +14,33 @@ Desenvolvido como projeto de estágio obrigatório do curso de Eng. de Controle 
 
 ## Pré-requisitos
 
-Recomenda-se a utilização de um gerenciador de pacotes como o [Anaconda](https://www.anaconda.com/) ou [Miniconda](https://docs.conda.io/en/latest/miniconda.html), visto que possibilitam a criação de ambientes de desenvolvimento isolados para cada projeto. 
+Recomenda-se a utilização de um gerenciador de pacotes como o [Anaconda](https://www.anaconda.com/)/[Miniconda](https://docs.conda.io/en/latest/miniconda.html), visto que possibilitam a criação de ambientes de desenvolvimento isolados para cada projeto.
 
 <!--
 No início do desenvolvimento, a versão do Python instalada em meu computador ainda não era suportada pelo TensorFlow, e o Anaconda permitiu a criação de um environment específico para o projeto, utilizando uma versão mais antiga da Python.
 -->
 
-O arquivo ```requirements.txt``` contém uma lista com todas as bibliotecas utilizadas no environment do projeto. Após a instalação do Anaconda, um novo environment, com estas bibliotecas, pode ser criado com o seguinte comando:
+O arquivo ```requirements.txt``` contém uma lista com todas as bibliotecas utilizadas no projeto. Utilizando o conda, crie um novo environment com o seguinte comando:
 
 ```bash
 conda create --name neural-nets-mpc --file requirements.txt
-# Após criação e ativação do environment, recomenda-se buscar atualizações com
-conda update --all
 ```
 
-Para execução do código, é recomendado utilizar o [Spyder IDE](https://www.spyder-ide.org/), também instalável pelo próprio Anaconda. Sua interface lembra a do Matlab, e a maior utilidade dessa IDE é o Variable Explorer, indispensável para inspeção dos dicionários de treinamento e análise dos modelos neurais obtidos.
+Para analisar o código e executar o programa, recomendo o [Spyder IDE](https://www.spyder-ide.org/), instalável pelo próprio Anaconda. Sua interface lembra a do Matlab, e a ferramente Variable Explorer facilita bastante a inspeção das variáveis no decorrer do treinamento dos modelos.
 
 ## Relatório e mudanças
 
-Meu relatório do estágio está salvo na pasta ```docs```, e explica em detalhes o estudo que foi efetuado na área de identificação de sistemas com redes neurais, além da ideia por trás do algoritmo de identificação. Porém, desde sua escrita, algumas mudanças foram feitas no código, como:
+Meu relatório do estágio está salvo na pasta ```docs```. Nele, explico em detalhes o estudo que foi efetuado na área de identificação de sistemas com redes neurais, e justifico a escolha de múltiplos DLPs como estratégia de identificação de sistema. Desde a escrita do relatório, foram feitas as seguintes mudanças no código:
 
 - adequação ao guia [PEP8](https://www.python.org/dev/peps/pep-0008/);
 - organização dos arquivos auxiliares em no package ```utils```;
-- documentação do projeto com docstrings e [Sphinx](https://www.sphinx-doc.org/en/master/index.html);
 - desenvolvimento da versão decremental do algoritmo de input selection, que substituiu a versão anterior (agora guardada em ```unused_functions.py```);
 - utilização da [correlação](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.corr.html) entre as variáveis de entrada e saída no início do algoritmo de input selection, para filtragem inicial de variáveis.
 - ```dependency.py``` para adição/remoção de dependências de uma saída
 
 ## Documentação
 
-Todo o código foi documentado com a utilização de docstrings. A ferramenta [Sphinx](https://www.sphinx-doc.org/en/master/index.html) foi utilizada para gerar uma página html a partir desses docstrings. Para visualizar a documentação, basta clicar no atalho ```Abrir Documentação```, que está na pasta ```docs```.
+O código foi documentado com docstrings. A ferramenta [Sphinx](https://www.sphinx-doc.org/en/master/index.html) foi utilizada para gerar uma página html a partir desses docstrings. Para visualizá-la, basta clicar no atalho ```Abrir Documentação```, que está na pasta ```docs```.
 
 Para gerar a documentação novamente, basta abrir o terminal do Anaconda na pasta ```docs``` e executar o comando ```make html```. Também é necessário instalar o tema com:
 
@@ -51,7 +48,7 @@ Para gerar a documentação novamente, basta abrir o terminal do Anaconda na pas
 pip install sphinx-rtd-theme
 ```
 
-É importante que não haja nenhum código "solto" na hora de realizar a documentação, pois o Sphinx importa todos os arquivos, e tudo que está solto é executado. Por isso, foi necessário adicionar o protective wrapper na ```main.py```.
+É importante que não haja nenhum código "solto" na hora de realizar a documentação, pois o Sphinx importa todos os arquivos, e tudo que está solto é executado. Por isso, foi necessário adicionar o "protective wrapper" na ```main.py```.
 
 <center><a href="https://www.youtube.com/watch?v=b4iFyrLQQh4">Tutorial do Sphinx</a></center>
 
@@ -59,7 +56,7 @@ pip install sphinx-rtd-theme
 
 #### \data
 
-Nesta pasta estão guardados os dados que são utilizados para obtenção de modelos neurais. Por motivos de confidencialidade, os dados reais do sistema foram removidos desse repositório público, mas os dados do simulink e do simlador emso estão.
+Nesta pasta, estão os logs dos sensores, que são utilizados para obtenção de modelos neurais.
 
 - Batches 1, 2 e 3 são conjuntos de dados do sistema real de compressão de gás.
 
@@ -73,9 +70,7 @@ A documentação da função ```analysis_utils.load_data``` contém mais informa
 
 Todos os resultados são guardados nessa pasta, incluindo os três dicionários (de treinamento, análise e modelos) e os plots que forem efetuados.
 
-Nota-se que é possível, por exemplo, criar os modelos de y1 até y5, analisar os resultados e depois continuar de y6 em diante sem perder os resultados, porém se recriar o modelo de y1, o modelo anterior é sobrescrito.
-
-Por isso, ao trocar o conjunto de dados ou parâmetros de execução, é necessário criar uma pasta backup e arrastar para dentro o conteúdo que não se quer perder.
+Também é possível, por exemplo, criar os modelos de y1 até y5, analisar os resultados e depois continuar de y6 em diante sem perder os resultados, porém se recriar o modelo de y1, o modelo anterior é sobrescrito. Logo, ao trocar o conjunto de dados ou parâmetros de execução, é necessário criar uma pasta backup e arrastar para dentro os resultados anteriores, caso não queira sobrescrevê-los.
 
 #### \docs
 
